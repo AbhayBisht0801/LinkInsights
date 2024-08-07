@@ -2,6 +2,7 @@ from langchain_community.document_loaders import YoutubeLoader,WebBaseLoader
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 load_dotenv()
+from IPython.display import Markdown, display
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from docx import Document
 from docx.shared import Pt
@@ -11,11 +12,15 @@ from bs4 import BeautifulSoup
 from nltk.tokenize import word_tokenize
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains.summarize import load_summarize_chain
+
 models=ChatGoogleGenerativeAI(model='gemini-1.5-pro')
+def markdown_result(result):
+    return display(Markdown(result))
 def tokenize(lang):
     return word_tokenize(lang)
-def youtubetranscript(links,language,translation):
-    text=[]
+from langchain.document_loaders import YoutubeLoader
+def youtubetranscript(links,language=None,translation=None):
+    text=''
     if language=="" and translation=="":
     
         for i in links.split(','):
@@ -23,7 +28,7 @@ def youtubetranscript(links,language,translation):
             Transcript=loader.load()
             text+=Transcript[0].page_content
         return text
-    elif language !="":
+    elif language !="" and translation=='':
         for i in links.split(','):
             loader=YoutubeLoader.from_youtube_url(i,language=language)
             Transcript=loader.load()
@@ -82,7 +87,7 @@ def split_text(text):
 def qna_chain(models,text,question):
     chain=load_summarize_chain(models,chain_type='map_rerank',return_intermediate_steps=True)
     result=chain({'input_documents':text,'question':question},return_only_outputs=True)
-    return result.stream
+    return result
 def report_creation(models,text,format):
     report_template="""Your Have to generate a  Report based following data Below:
     '{text}'
@@ -92,25 +97,33 @@ def report_creation(models,text,format):
     prompt=PromptTemplate(template=report_template,input_variables=['text','Format'])
     result=models.invoke(prompt.format(text=text,Format=format))
     return result
-def summarize_video(Transcript,models,content_genre):
-    if content_genre.replace('\n','').strip()=='Educational/Tutorial':
-        prompt='''Summarize the Transcript in points and breifly describe the
-        following transcript if the video involves with respect to coding tutorial then write the piece of code for  the following:
-        {Transcript}'''
-        template = PromptTemplate(input_variables=['Transcript'], template=prompt)
-        result=models.invoke(template.format(Transcript=Transcript)).content
-    elif content_genre.replace('\n','').strip()=='Case Study':
-        prompt='''Summarize the Transcript in points and breifly describe the
+def summarize_video(Transcript, models, content_genre):
+    content_genre = content_genre.replace('\n', '').strip()
+    
+    if content_genre == 'Educational/Tutorial':
+        prompt = '''Summarize the Transcript in points and briefly describe the
+        following transcript if the video involves coding tutorial, then write the piece of code for the following:
+        {Transcript} Replace Word Transcript as Video Instead'''
+    
+    elif content_genre == 'Case Study' or content_genre == 'News/Current Affairs':
+        prompt = '''Summarize the Transcript in points with side heading and briefly describe the
         following transcript:
-        {Transcript}'''
-        template = PromptTemplate(input_variables=['Transcript'], template=prompt)
-        result=models.invoke(template.format(Transcript=Transcript)).content
-    elif content_genre.replace('\n','').strip()=='Podcast/Interview/Debate':
-        prompt='''Give the point of Discussion and give the summary of them with respect to the  following Transcript:
-        {Transcript}'''
-        template = PromptTemplate(input_variables=['Transcript'], template=prompt)
-        result=models.invoke(template.format(Transcript=Transcript)).content
+        {Transcript} Replace Word Transcript as Video Instead'''
+        
+    elif content_genre == 'Podcast/Interview/Debate' or content_genre==' Documentary':
+        prompt = '''Give the points of discussion with side heading   and summarize them with respect to the following :
+        {Transcript} Replace Word Transcript as Video Instead'''
+        
+    else:
+        # Handle the case where content_genre does not match any known categories
+        prompt = '''Summarize the Transcript in general terms:
+        {Transcript} Replace Word Transcript as Video Instead'''
+        
+    
+    template = PromptTemplate(input_variables=['Transcript'], template=prompt)
+    result = models.invoke(template.format(Transcript=Transcript)).content
     return result
+
 def summarize_web_and_vid(Text):
     prompt="""Write the concise summary of the following:
     "{text}" 
