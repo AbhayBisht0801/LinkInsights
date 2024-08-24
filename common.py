@@ -13,7 +13,6 @@ from nltk.tokenize import word_tokenize
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.chains.llm import LLMChain
 models=ChatGoogleGenerativeAI(model='gemini-1.5-pro')
 languages = {
     "ab": "Abkhazian",
@@ -242,17 +241,23 @@ def qna_chain(models,text,question):
     chain=load_qa_chain(models,chain_type='map_rerank',verbose=True,return_intermediate_steps=True)
     result=chain({'input_documents':text,'question':question},return_only_outputs=True)
     return result['output_text']
-def report_creation(models,text,format,type_of_report):
-    report_template="""Your Have to generate a  Report based following data Below:
-    '{text}'
-    The Format for the Report  and type of report as follows:
-    '{Format}' '{type_of_report}' """
 
-    prompt=PromptTemplate(template=report_template,input_variables=['text','Format',type_of_report])
-    modelchain=LLMChain(llm=models,prompt=prompt)
-    chain=load_summarize_chain(modelchain,chain_type='refine')
-    result=chain.run(text)
+def report_creation(models, text, format, type_of_report):
+    report_template = """You have to generate a {type_of_report} report based on the following data:
+    '{text}'
+    The format for the report is as follows:
+    '{format}'"""
+    
+    # Create the prompt
+    prompt = PromptTemplate(template=report_template, input_variables=['text', 'format', 'type_of_report'])
+    
+    # Load the summarize chain without passing the prompt directly
+    result=models.invoke(prompt.format(text=text,format=format,type_of_report=type_of_report))
+    
+    # Call the chain with the required inputs
+    
     return result
+
 def summarize_video(Transcript, models, content_genre):
     content_genre = content_genre.replace('\n', '').strip()
     
@@ -284,7 +289,7 @@ def summarize_web_and_vid(Text):
     CONCISE SUMMARY:
     """
     combine_prompt="""
-    Write a concise summaru of the following text delimited by triple backqoutes,
+    Write a concise summary of the following text delimited by triple backqoutes,
     Return your response in bullet points which covers the key points of the text.
     ```{text}```
     BULLET POINT SUMMARY:
