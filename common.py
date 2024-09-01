@@ -220,7 +220,7 @@ def web_data(link):
     text=''
     for i in link.split(','):
         loader=WebBaseLoader(i)
-        text+=loader.load()
+        text+=loader.load()[0].page_content
     return text
 def add_html_to_docx(html, doc):
     for element in html:
