@@ -36,6 +36,7 @@ def app():
                     st.session_state['Genre']=genre
                 if language_in!=None:
                     st.session_state['language_in']=translate_video_language_to
+                    st.session_state['content']='Youtube_Only'
             elif website_url!='' and youtube_url!="":
                 Text=''
                 Text+=youtubetranscript(youtube_url,language=match_back_language(video_language))
@@ -44,12 +45,13 @@ def app():
                     st.session_state['Text']=Text
                 if language_in!=None:
                     st.session_state['language_in']=translate_video_language_to
+                st.session_state['content']='Youtube_and_web'
             else:
                 Text=''
                 Text+=web_data(website_url)
                 if Text!="":
                     st.session_state['Text']=Text
-                print(Text)
+                st.session_state['content']='web'
         
 if __name__=='__main__':
     app.run()

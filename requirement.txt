@@ -10,3 +10,6 @@ python-dotenv
 markdown
 streamlit_option_menu
 nltk
+pytube
+streamlit_pdf_viewer
+comtypes

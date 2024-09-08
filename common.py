@@ -2,17 +2,24 @@ from langchain_community.document_loaders import YoutubeLoader,WebBaseLoader
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 load_dotenv()
+import comtypes.client
+import streamlit as st
+from langchain_core.prompts import ChatMessagePromptTemplate
 from IPython.display import Markdown, display
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from docx import Document
+import os
 from docx.shared import Pt
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from bs4 import BeautifulSoup
+import markdown
 from nltk.tokenize import word_tokenize
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chains.question_answering import load_qa_chain
+from langchain_core.runnables import RunnableParallel
+import base64
 models=ChatGoogleGenerativeAI(model='gemini-1.5-pro')
 languages = {
     "ab": "Abkhazian",
@@ -173,6 +180,11 @@ languages = {
     "zu": "Zulu"
 }
 
+def html_content_parser(output):
+    markdon_to_html=markdown.markdown(output)
+    soup = BeautifulSoup(markdon_to_html, "html.parser")
+    return soup
+
 def markdown_result(result):
     return display(Markdown(result))
 def tokenize(lang):
@@ -224,7 +236,7 @@ def web_data(link):
     return text
 def add_html_to_docx(html, doc):
     for element in html:
-        if element.name == "h1":
+        if element.name == "h2":
             run = doc.add_heading(level=1).add_run(element.text)
             run.font.size = Pt(24)
         elif element.name == "p":
@@ -243,20 +255,27 @@ def qna_chain(models,text,question):
     return result['output_text']
 
 def report_creation(models, text, format, type_of_report):
-    report_template = """You have to generate a {type_of_report} report based on the following data:
+    report_template = """You are tasked with writing a comprehensive {format}, using the same format for each section heading. The report will be a {type_of_report} based on the following data:
     '{text}'
-    The format for the report is as follows:
-    '{format}'"""
-    
-    # Create the prompt
+    """
+
     prompt = PromptTemplate(template=report_template, input_variables=['text', 'format', 'type_of_report'])
     
-    # Load the summarize chain without passing the prompt directly
-    result=models.invoke(prompt.format(text=text,format=format,type_of_report=type_of_report))
+    format_components = format.split(',')
+    formatted_prompts = []
     
-    # Call the chain with the required inputs
+    for component in format_components:
+        formatted_prompt = prompt.format(format=component, text=text, type_of_report=type_of_report)
+        formatted_prompts.append(models.invoke(formatted_prompt).content)  
+
     
-    return result
+    results = formatted_prompts  
+    
+    output = ''
+    for result in results:
+        output += result  # Assuming `result` is already the text output
+
+    return output
 
 def summarize_video(Transcript, models, content_genre):
     content_genre = content_genre.replace('\n', '').strip()
@@ -276,6 +295,7 @@ def summarize_video(Transcript, models, content_genre):
     else:
         prompt = f''' Provide a general summary of this transcript. from the following:
         {Transcript} Replace the word Transcript with Video in result'''
+
     
     print(prompt)
     template = PromptTemplate(input_variables=['Transcript'], template=prompt)
@@ -283,28 +303,62 @@ def summarize_video(Transcript, models, content_genre):
     return result
 
 
-def summarize_web_and_vid(Text):
-    prompt="""Write the concise summary of the following:
+
+
+def summarize_web_and_vid_or_web(Text, models):
+    prompt = """Write the concise summary of the following:
     "{text}" 
     CONCISE SUMMARY:
     """
-    combine_prompt="""
-    Write a concise summary of the following text delimited by triple backqoutes,
-    Return your response in bullet points which covers the key points of the text.
+    
+    combine_prompt = """
+    Write a concise summary of the following text delimited by triple backquotes,
+    Return your response in bullet points which cover the key points of the text.
     ```{text}```
     BULLET POINT SUMMARY:
     """
-    combine_prompt_template=PromptTemplate(template=combine_prompt_template,input_variables=['text'])
-    summary_prompt=PromptTemplate(template=prompt,input_variables=['text'])
-    summary_chain=load_summarize_chain(llm=models,chain_type='map_reduce',map_prompt=summary_prompt,combine_prompt=combine_prompt_template)
-    output=summary_chain(Text)
+    
+    # Correctly creating PromptTemplate objects
+    summary_prompt_template = PromptTemplate(template=prompt, input_variables=['text'])
+    combine_prompt_template = PromptTemplate(template=combine_prompt, input_variables=['text'])
+    
+    # Loading the summarize chain
+    summary_chain = load_summarize_chain(llm=models, chain_type='map_reduce', map_prompt=summary_prompt_template, combine_prompt=combine_prompt_template)
+    
+    # Running the summarization chain with the provided text
+    output = summary_chain(Text).content
+    
     return output
+
 def match_back_language(value):
     for key,values in languages.items():
         if values==value:
             return key
+def doc_to_pdf(word_path='report.docx',pdf_path='report.pdf'):
+    word_path='report.docx'
+    pdf_path='report.pdf'
+    doc=Document(word_path)
+    word=comtypes.client.CreateObject('Word.Application')
+    docx_path=os.path.abspath(word_path)
+    pdf_path=os.path.abspath(pdf_path)
+    pdf_format=17
+    word.Visible=False
+    in_file=word.Documents.Open(docx_path)
+    in_file.SaveAs(pdf_path,File_Format=pdf_format)
+    in_file.Close()
+    word.Quit
+    os.remove(word_path)
 
+def displayPDF(file):
+    # Opening file from file path
+    with open(file, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
 
+    # Embedding PDF in HTML
+    pdf_display = F'<embed src="data:application/pdf;base64,{base64_pdf}" width="700" height="1000" type="application/pdf">'
+
+    # Displaying File
+    st.markdown(pdf_display, unsafe_allow_html=True)
 
 
 
