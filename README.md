@@ -46,7 +46,7 @@ LinkInsights is a Streamlit-based project that allows users to input YouTube vid
 3. Run the application:
 
    ```bash
-   streamlit run app.py
+   streamlit run main.py
    ```
 
 ## Usage
