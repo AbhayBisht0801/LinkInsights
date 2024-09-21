@@ -4,9 +4,11 @@ from common import summarize_video, models, add_html_to_docx, markdown_result, s
 def app():
     try:
         # Get the session state values safely
-        content = st.session_state.get('content', None)
-        Text = st.session_state.get('Text', None)
         
+        content = st.session_state.get('content')
+        Text = st.session_state.get('Text')
+        print(content)
+        print(Text)
         if content is None or Text is None:
             raise KeyError
 

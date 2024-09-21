@@ -20,7 +20,8 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain.chains.question_answering import load_qa_chain
 from langchain_core.runnables import RunnableParallel
 import base64
-models=ChatGoogleGenerativeAI(model='gemini-1.5-pro')
+from langchain.docstore.document import Document
+models=ChatGoogleGenerativeAI(model='gemini-1.5-flash')
 languages = {
     "ab": "Abkhazian",
     "aa": "Afar",
@@ -249,13 +250,16 @@ def add_html_to_docx(html, doc):
 def split_text(text):
     text_split=RecursiveCharacterTextSplitter(chunk_size=4000,chunk_overlap=500)
     return text_split.split_text(text)
+
 def qna_chain(models,text,question):
-    chain=load_qa_chain(models,chain_type='map_rerank',verbose=True,return_intermediate_steps=True)
-    result=chain({'input_documents':text,'question':question},return_only_outputs=True)
+    documents = [Document(page_content=text)]
+    
+    chain=load_qa_chain(models,chain_type='map_reduce', verbose=True, return_intermediate_steps=False)
+    result=chain({'input_documents':documents,'question':question},return_only_outputs=True)
     return result['output_text']
 
 def report_creation(models, text, format, type_of_report):
-    report_template = """You are tasked with writing a comprehensive {format}, using the same format for each section heading. The report will be a {type_of_report} based on the following data:
+    report_template = """You are tasked with writing a comprehensive report with following {format}, using the each heading in report as the respective headings. The report will be a {type_of_report} based on the following data:
     '{text}'
     """
 
@@ -306,16 +310,30 @@ def summarize_video(Transcript, models, content_genre):
 
 
 def summarize_web_and_vid_or_web(Text, models):
+    token_len=models.get_num_tokens(Text)
+    
+    documents = [Document(page_content=Text)]
     prompt = """Write the concise summary of the following:
     "{text}" 
     CONCISE SUMMARY:
     """
     
     combine_prompt = """
-    Write a concise summary of the following text delimited by triple backquotes,
-    Return your response in bullet points which cover the key points of the text.
-    ```{text}```
-    BULLET POINT SUMMARY:
+    Summarize the following text, breaking it down into key sections with bullet points under each heading. Ensure each section highlights the most important details.
+    
+    TEXT:
+    "{text}"
+    
+    SUMMARY FORMAT:
+    
+    - **Introduction:**
+      - Key points of the introduction.
+      
+    - **Main Points:**
+      - Key details about the main topic.
+      
+    - **Conclusion:**
+      - Key points of the conclusion.
     """
     
     # Correctly creating PromptTemplate objects
@@ -323,12 +341,23 @@ def summarize_web_and_vid_or_web(Text, models):
     combine_prompt_template = PromptTemplate(template=combine_prompt, input_variables=['text'])
     
     # Loading the summarize chain
-    summary_chain = load_summarize_chain(llm=models, chain_type='map_reduce', map_prompt=summary_prompt_template, combine_prompt=combine_prompt_template)
-    
-    # Running the summarization chain with the provided text
-    output = summary_chain(Text).content
-    
-    return output
+    if token_len<5000:
+        summary_chain = load_summarize_chain(llm=models, chain_type='map_reduce', map_prompt=summary_prompt_template, combine_prompt=combine_prompt_template)
+        
+        # Running the summarization chain with the provided text
+        output = summary_chain(documents)
+        
+        return output['output_text']
+    else:
+        text_splitter = RecursiveCharacterTextSplitter(separators=["\n\n", "\n"], chunk_size=5000, chunk_overlap=500)
+
+        docs = text_splitter.create_documents([Text])
+        summary_chain = load_summarize_chain(llm=models, chain_type='map_reduce', map_prompt=summary_prompt_template, combine_prompt=combine_prompt_template)
+        
+        # Running the summarization chain with the provided text
+        output = summary_chain(docs)
+        
+        return output['output_text']
 
 def match_back_language(value):
     for key,values in languages.items():

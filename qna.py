@@ -27,6 +27,7 @@ def app():
                 st.markdown(user_query)
 
             ai_response = qna_chain(models=models,text=Text,question=user_query)
+            print(ai_response)
             with st.chat_message('AI'):
                 st.markdown(ai_response)
 
