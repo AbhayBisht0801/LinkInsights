@@ -192,6 +192,7 @@ def tokenize(lang):
     return word_tokenize(lang)
 from langchain.document_loaders import YoutubeLoader
 def youtubetranscript(links,language=None,translation='en'):
+    
     text=''
     if language=="en":
     
@@ -206,6 +207,7 @@ def youtubetranscript(links,language=None,translation='en'):
             Transcript=loader.load()
             text+=Transcript[0].page_content
         return text
+
 
 
     
@@ -259,7 +261,7 @@ def qna_chain(models,text,question):
     return result['output_text']
 
 def report_creation(models, text, format, type_of_report):
-    report_template = """You are tasked with writing a comprehensive report with following {format}, using the each heading in report as the respective headings. The report will be a {type_of_report} based on the following data:
+    report_template = """You are tasked to write {format} for a report, use {format} as the respective heading. The report will be a {type_of_report} based on the following data:
     '{text}'
     """
 
@@ -283,6 +285,7 @@ def report_creation(models, text, format, type_of_report):
 
 def summarize_video(Transcript, models, content_genre):
     content_genre = content_genre.replace('\n', '').strip()
+    token_len=models.get_num_tokens(Transcript)
     
     if content_genre == 'Educational/Tutorial':
         prompt = f'''Summarize this transcript in points and briefly describe it. If the video involves coding, include the piece of code as well. from the following:
@@ -301,10 +304,38 @@ def summarize_video(Transcript, models, content_genre):
         {Transcript} Replace the word Transcript with Video in result'''
 
     
-    print(prompt)
-    template = PromptTemplate(input_variables=['Transcript'], template=prompt)
-    result = models.invoke(template.format(Transcript=Transcript)).content
-    return result
+    if token_len<5000:
+        template = PromptTemplate(input_variables=['Transcript'], template=prompt)
+        result = models.invoke(template.format(Transcript=Transcript)).content
+        return result
+    else:
+        combine_prompt = """
+    Summarize the following text, breaking it down into key sections with bullet points under each heading. Ensure each section highlights the most important details.
+    
+    TEXT:
+    "{text}"
+    
+    SUMMARY FORMAT:
+    
+    - **Introduction:**
+      - Key points of the introduction.
+      
+    - **Main Points:**
+      - Key details about the main topic.
+      
+    - **Conclusion:**
+      - Key points of the conclusion.
+    """
+        text_splitter = RecursiveCharacterTextSplitter(separators=["\n\n", "\n"], chunk_size=5000, chunk_overlap=500)
+        summary_prompt_template = PromptTemplate(template=prompt, input_variables=['text'])
+        combine_prompt_template = PromptTemplate(template=combine_prompt, input_variables=['text'])
+        docs = text_splitter.create_documents([Transcript])
+        summary_chain = load_summarize_chain(llm=models, chain_type='map_reduce', map_prompt=summary_prompt_template, combine_prompt=combine_prompt_template)
+        
+        # Running the summarization chain with the provided text
+        output = summary_chain(docs)
+        
+        return output['output_text']
 
 
 

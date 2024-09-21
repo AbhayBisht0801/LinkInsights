@@ -27,16 +27,19 @@ def app():
             language_in=None
             
             if website_url=='' and youtube_url!="":
-                Text=''
-                st.session_state['content']='Youtube_Only'
-                Text+=youtubetranscript(youtube_url,language=match_back_language(video_language))
-                genre=videogenre(models=models,transcript=Text)
-                if Text!="":
-                    st.session_state['Text']=Text
-                if genre!=None:
-                    st.session_state['Genre']=genre
-                if language_in!=None:
-                    st.session_state['language_in']=translate_video_language_to
+                try: 
+                    Text=''
+                    st.session_state['content']='Youtube_Only'
+                    Text+=youtubetranscript(youtube_url,language=match_back_language(video_language))
+                    genre=videogenre(models=models,transcript=Text)
+                    if Text!="":
+                        st.session_state['Text']=Text
+                    if genre!=None:
+                        st.session_state['Genre']=genre
+                    if language_in!=None:
+                        st.session_state['language_in']=translate_video_language_to
+                except Exception as e:
+                    st.error(f"Choose the correct language spoken in the video or either video does not contain transcript ")
                 
             elif website_url!='' and youtube_url!="":
                 Text=''
@@ -47,12 +50,14 @@ def app():
                 if language_in!=None:
                     st.session_state['language_in']=translate_video_language_to
                 st.session_state['content']='Youtube_and_web'
-            else:
+            elif website_url!='':
                 Text=''
                 Text+=web_data(website_url)
                 if Text!="":
                     st.session_state['Text']=Text
                 st.session_state['content']='web_only'
+            else:
+                st.error('Please enter either website URL or YouTube URL')
         
 if __name__=='__main__':
     app.run()

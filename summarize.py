@@ -7,8 +7,7 @@ def app():
         
         content = st.session_state.get('content')
         Text = st.session_state.get('Text')
-        print(content)
-        print(Text)
+       
         if content is None or Text is None:
             raise KeyError
 
