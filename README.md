@@ -23,7 +23,11 @@ LinkInsights is a Streamlit-based project that allows users to input YouTube vid
 
 
 
-https://github.com/user-attachments/assets/43e853e8-857b-4e0d-847d-6d0480281daf
+https://github.com/user-attachments/assets/b91d9744-7148-4a9d-b83d-de2b7aba891a
+
+
+
+
 
 
 ## Technologies Used
