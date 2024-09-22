@@ -21,7 +21,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain_core.runnables import RunnableParallel
 import base64
 from langchain.docstore.document import Document
-models=ChatGoogleGenerativeAI(model='gemini-1.5-flash')
+models=ChatGoogleGenerativeAI(model='gemini-1.5-pro')
 languages = {
     "ab": "Abkhazian",
     "aa": "Afar",

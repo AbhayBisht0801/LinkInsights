@@ -11,5 +11,6 @@ markdown
 streamlit_option_menu
 nltk
 pytube
-streamlit_pdf_viewer
+streamlit-pdf-viewer
 comtypes
+docx2pdf

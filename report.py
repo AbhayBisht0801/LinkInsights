@@ -4,7 +4,9 @@ from streamlit import session_state
 from docx import Document
 from bs4 import BeautifulSoup
 from markdown import markdown
-from doc2pdf import convert
+from docx2pdf import convert
+from streamlit_pdf_viewer import pdf_viewer
+
 def app():
     Text=session_state.get('Text')
     
@@ -28,6 +30,8 @@ def app():
                 print(Report_type,report_format)
                 add_html_to_docx(html_content, doc)
                 doc.save("report.docx")
+                convert("report.docx", "report.pdf")
+                pdf_viewer('report.pdf')
                 
         
 
