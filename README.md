@@ -1,14 +1,15 @@
 # LinkInsights
 
-LinkInsights is a Streamlit-based project that allows users to input YouTube video links or website URLs and scrapes data or transcripts from the provided source. Using powerful Language Learning Models (LLMs) like Gemini Pro 1.5, LinkInsights provides various outputs, such as summaries, reports, or Q&A based on the content from the scraped data.
+LinkInsights is a powerful tool that allows users to input links from YouTube videos or websites (or both) and scrape data using LangChain's WebLoader and YouTubeLoader. The scraped data is then utilized to generate summaries, reports, or conduct Q&A using large language models (LLMs). This project is implemented in Streamlit, making it easy to interact with and visualize the output.
 
 ## Features
 
-- **YouTube Video Transcripts**: Automatically fetches transcripts from YouTube videos.
-- **Website Data Scraping**: Scrapes text data from websites to use for further analysis.
-- **Text Summarization**: Generates concise summaries of the provided content.
-- **Q&A Generation**: Enables users to ask questions based on the scraped content and receive intelligent answers.
-- **Report Generation**: Create detailed reports from the content for further insights.
+- **Input Links**: Accepts both YouTube video links and website links.
+- **Data Scraping**: Uses LangChain's WebLoader for websites and YouTubeLoader for video transcripts.
+- **Summarization**: Generate concise summaries of the scraped content.
+- **Report Generation**: Create detailed reports based on the input data.
+- **Q&A Functionality**: Ask questions about the scraped content and receive insightful answers.
+- **LLM Integration**: Utilizes Gemini-pro 1.5 for text processing and response generation.
 
 ## How It Works
 
