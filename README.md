@@ -19,6 +19,12 @@ LinkInsights is a Streamlit-based project that allows users to input YouTube vid
     - **Summarization**: A concise summary of the content is displayed.
     - **Q&A**: Ask questions and receive answers from the content.
     - **Report**: A detailed report is generated based on the content.
+  
+
+
+
+https://github.com/user-attachments/assets/43e853e8-857b-4e0d-847d-6d0480281daf
+
 
 ## Technologies Used
 
@@ -48,7 +54,7 @@ LinkInsights is a Streamlit-based project that allows users to input YouTube vid
    ```bash
    streamlit run main.py
    ```
-4. Create a .env file with GOOGLE_API_KEY:
+4. Create a .env file with  GOOGLE_API_KEY:
    ```bash
    GOOGLE_API_KEY=YOUR_API_KEY
    ```
