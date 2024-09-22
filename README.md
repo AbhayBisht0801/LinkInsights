@@ -48,6 +48,10 @@ LinkInsights is a Streamlit-based project that allows users to input YouTube vid
    ```bash
    streamlit run main.py
    ```
+4. Create a .env file with GOOGLE_API_KEY:
+   ```bash
+   GOOGLE_API_KEY=YOUR_API_KEY
+   ```
 
 ## Usage
 
